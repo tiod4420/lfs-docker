@@ -3,7 +3,7 @@ FROM debian:stable
 # Install packages
 RUN apt update && apt upgrade -y
 RUN apt install -y \
-	    build-essential git git-lfs locales man-db sudo vim \
+	    build-essential fdisk file git git-lfs locales man-db sudo vim \
 	    bash-completion bison clang gawk m4 terminfo texinfo tree wget
 RUN apt clean
 
