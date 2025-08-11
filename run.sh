@@ -21,6 +21,6 @@ if [ "$(docker ps -a -q -f name=^/${DOCKER_CONTAINER}$)" ]; then
 else
 	echo "Create and run Docker container $DOCKER_CONTAINER..."
 	docker run -it --privileged --name $DOCKER_CONTAINER \
-		-v $SRC_DIR/lfs-shared:/home/lfs/shared \
+		-v $SRC_DIR/shared:/home/lfs/shared \
 		$DOCKER_IMG
 fi

@@ -1,0 +1,22 @@
+# Turn off bash cache for PATH
+set +h
+
+# Set file creation mask
+umask 022
+
+# Set locale
+export LC_ALL=POSIX
+
+# Set LFS root dir
+export LFS=/mnt/lfs
+
+# Set PATH
+PATH=$LFS/tools/bin
+[ ! -L /bin ] && PATH=$PATH:/bin
+PATH=$PATH:/usr/bin
+export PATH
+
+# Set compilation environment
+export LFS_TGT=$(uname -m)-lfs-linux-gnu
+export CONFIG_SITE=$LFS/usr/share/config.site
+export MAKEFLAGS=-j8

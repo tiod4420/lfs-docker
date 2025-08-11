@@ -9,25 +9,20 @@ RUN apt clean
 
 # Set bash as sh
 RUN rm /bin/sh && ln -s bash /bin/sh
-
-# Set locales
-RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen \
-	    && locale-gen
+RUN mv /etc/bash.bashrc{,.NOUSE}
 
 # Create user
-RUN useradd -m -s /bin/bash lfs \
+RUN useradd -m -k /dev/null -s /bin/bash lfs \
 	    && echo "lfs ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/lfs
+
+# Set user and environment
 USER lfs
 WORKDIR /home/lfs
 
-# Set environment
-ENV LANG=en_US.UTF-8
-ENV TERM=xterm-256color
 ENV USER=lfs
+ENV TERM=xterm-256color
+ENV LFS=/mnt/lfs
 
-# Deploy dotfiles
-RUN git clone https://github.com/tiod4420/dotfiles \
-	    && cd dotfiles \
-	    && git checkout update \
-	    && git submodule update --init --recursive \
-	    && yes | ./deploy.sh
+# Copy dotfiles
+COPY --chown=lfs:lfs dotfiles/bashrc .bashrc
+COPY --chown=lfs:lfs dotfiles/bash_profile .bash_profile
