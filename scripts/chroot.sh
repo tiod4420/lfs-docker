@@ -2,7 +2,7 @@
 set -e
 
 LFS=/mnt/lfs
-NPROCS=${1:-$(nproc)}
+NPROC=${1:-$(nproc)}
 
 chroot "$LFS" /usr/bin/env -i \
 	HOME=/root \
