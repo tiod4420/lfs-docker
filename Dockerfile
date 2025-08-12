@@ -21,9 +21,9 @@ WORKDIR /home/lfs
 
 ENV USER=lfs
 ENV TERM=xterm-256color
-ENV LFS=/mnt/lfs
 
 # Copy dotfiles
 COPY --chown=lfs:lfs scripts/bashrc .bashrc
 COPY --chown=lfs:lfs scripts/bash_profile .bash_profile
 COPY --chown=lfs:lfs scripts/mount.sh mount.sh
+COPY --chown=lfs:lfs scripts/version-check.sh version-check.sh
