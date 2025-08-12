@@ -2,12 +2,48 @@
 set -e
 
 SRC_DIR=$(dirname ${BASH_SOURCE[0]})
-SHARED_DIR=$SRC_DIR/shared
 
 DOCKER_CONTAINER=lfs-container
 DOCKER_IMG=lfs-image
 
-DISK_IMG=$SHARED_DIR/lfs.img
+DISK_IMG=lfs.img
+EFI_SIZE=200
+BOOT_SIZE=200
+SWAP_SIZE=4096
+ROOT_SIZE=20480
+
+SHARED_DIR=$SRC_DIR/shared
+
+# Create LFS disk image
+if ! [ -f "$DISK_IMG" ]; then
+	echo "$DISK_IMG: creating disk image..."
+	TOTAL_SIZE=$((${EFI_SIZE} + ${BOOT_SIZE} + ${SWAP_SIZE} + ${ROOT_SIZE}))
+	dd if=/dev/zero of=$DISK_IMG bs=1M count=$TOTAL_SIZE
+
+	# Create partitions
+	echo "$DISK_IMG: creating partitions..."
+	echo "label: gpt" | sfdisk $DISK_IMG
+	echo "size=${EFI_SIZE}M, type=uefi" | sfdisk --append $DISK_IMG
+	echo "size=${BOOT_SIZE}M, type=linux" | sfdisk --append $DISK_IMG
+	echo "size=${SWAP_SIZE}M, type=swap" | sfdisk --append $DISK_IMG
+	echo "type=linux" | sfdisk --append $DISK_IMG
+
+	# Format file systems
+	echo "$DISK_IMG: attaching to loop device..."
+	LOOP_DEV=$(sudo losetup --find --partscan --show $DISK_IMG)
+	echo "$DISK_IMG: attached to $LOOP_DEV"
+
+	echo "$DISK_IMG: creating file systems..."
+	sudo mkfs.fat -F32 ${LOOP_DEV}p1
+	sudo mkswap ${LOOP_DEV}p2
+	sudo mkfs.ext4 ${LOOP_DEV}p3
+	sudo mkfs.ext4 ${LOOP_DEV}p4
+
+	echo "$LOOP_DEV: detaching loop device"
+	sudo losetup -d $LOOP_DEV
+else
+	echo "$DISK_IMG: already created"
+fi
 
 # Build image if not existing
 if ! docker image inspect $DOCKER_IMG > /dev/null 2>&1; then
@@ -19,11 +55,12 @@ fi
 
 # Mount the LFS disk as a loop device
 if ! losetup -j $DISK_IMG | grep -q .; then
+	echo "$DISK_IMG: attaching to loop device..."
 	LOOP_DEV=$(sudo losetup --find --partscan --show $DISK_IMG)
-	echo "$DISK_IMG: attaching to $LOOP_DEV..."
+	echo "$DISK_IMG: attached to $LOOP_DEV"
 
 	# Trap to unmount disk image
-	trap "echo '$LOOP_DEV: detaching...' && sudo losetup -d $LOOP_DEV" EXIT
+	trap "echo '$LOOP_DEV: detaching loop device...' && sudo losetup -d $LOOP_DEV" EXIT
 else
 	echo "$DISK_IMG: already attached"
 fi
