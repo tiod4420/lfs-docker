@@ -2,33 +2,27 @@
 set -e
 
 LFS=/mnt/lfs
-LOOP_DEV=loop0
+LOOP_DEV=${1:-loop0}
 
-# Root
-mkdir -p $LFS
-mount /dev/${LOOP_DEV}p4 $LFS
+# Mount loop device filesystems
+mkdir -pv $LFS
+mount -v -t ext4 /dev/${LOOP_DEV}p4 $LFS
+mkdir -pv $LFS/boot
+mount -v -t ext4 /dev/${LOOP_DEV}p2 $LFS/boot
+mkdir -pv $LFS/efi
+mount -v -t vfat /dev/${LOOP_DEV}p1 $LFS/efi
+swapon -v /dev/${LOOP_DEV}p3
 
-# Boot
-mkdir -p $LFS/boot
-mount /dev/${LOOP_DEV}p2 $LFS/boot
-
-# EFI
-mkdir -p $LFS/efi
-mount /dev/${LOOP_DEV}p1 $LFS/efi
-
-# Swap
-swapon /dev/${LOOP_DEV}p3
-
-# Virtual file systems
-mkdir -p $LFS/{dev,proc,sys,run}
-mount --bind /dev $LFS/dev
-mount -t devpts devpts -o gid=5,mode=0620 $LFS/dev/pts
-mount -t proc proc $LFS/proc
-mount -t sysfs sysfs $LFS/sys
-mount -t tmpfs tmpfs $LFS/run
+# Mount virtual file systems
+mkdir -pv $LFS/{dev,proc,sys,run}
+mount -v --bind /dev $LFS/dev
+mount -v -t devpts devpts -o gid=5,mode=0620 $LFS/dev/pts
+mount -v -t proc proc $LFS/proc
+mount -v -t sysfs sysfs $LFS/sys
+mount -v -t tmpfs tmpfs $LFS/run
 
 if [ -h $LFS/dev/shm ]; then
 	install -v -d -m 1777 $LFS$(realpath /dev/shm)
 else
-	mount -vt tmpfs -o nosuid,nodev tmpfs $LFS/dev/shm
+	mount -v -t tmpfs -o nosuid,nodev tmpfs $LFS/dev/shm
 fi
